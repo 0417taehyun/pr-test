@@ -20,16 +20,17 @@ def accept_merge(url, headers, base, head):
 
 
 def lambda_handler(event, context):
-    url      = event["body"]["repository"]["merges_url"]
+    data     = json.loads(event["body"])
+    url      = data["repository"]["merges_url"]
     headers  = {
         "Accept"       : "application/vnd.github.v3+json",
         "Authorization": f"token {token}"
     }
     base     = "origin"     
-    head     = event["body"]["commits"]["id"]
+    head     = data["commits"]["id"]
     response = accept_merge(url, headers, base, head)
 
-    modified_file = event["body"]["commits"]["modified"][0]
+    modified_file = data["commits"]["modified"][0]
     if check_pr(modified_file):
         response  = accept_merge(url, headers, base, head)
         
