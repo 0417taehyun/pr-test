@@ -27,13 +27,11 @@ def lambda_handler(event, context):
         "Authorization": f"token {token}"
     }
     base     = "origin"     
-    head     = data["commits"]["id"]
-    response = accept_merge(url, headers, base, head)
-
     commits  = data["commits"]
     
     for commit in commits:
         modified_file = commit["modified"][0]
+        head          = commit["id"]
         committer     = commit["committer"]["name"]
         if check_pr(modified_file):
             response  = accept_merge(url, headers, base, head)
