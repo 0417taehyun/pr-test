@@ -20,7 +20,6 @@ def accept_merge(url, headers, base, head):
 
 
 def lambda_handler(event, context):
-    token    = token["github"]
     url      = event["body"]["repository"]["merges_url"]
     headers  = {
         "Accept"       : "application/vnd.github.v3+json",
