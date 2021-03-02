@@ -20,28 +20,24 @@ def accept_merge(url, headers, base, head):
 
 
 def lambda_handler(event, context):
-    token    = token["github"]
-    url      = event["body"]["repository"]["merges_url"]
+    data     = json.loads(event["body"])
+    url      = data["repository"]["merges_url"]
     headers  = {
         "Accept"       : "application/vnd.github.v3+json",
         "Authorization": f"token {token}"
     }
-    base     = "origin"     
-    head     = event["body"]["commits"]["id"]
-    response = accept_merge(url, headers, base, head)
-
-    modified_file = event["body"]["commits"]["modified"][0]
-    if check_pr(modified_file):
-        response  = accept_merge(url, headers, base, head)
-        
-        print(response)
-
-        return {
-            "statusCode": 200,
-            "body"      : json.dumps("Merge accepted")
-        }
+    base     = "master"     
+    commits  = data["commits"]
     
-    print("Merge unaccepted, change the another file.")
+    for commit in commits:
+        modified_file = commit["modified"][0]
+        head          = commit["id"]
+        committer     = commit["committer"]["name"]
+        if check_pr(modified_file):
+            response  = accept_merge(url, headers, base, head)
+            print(response)
+        else:
+            print(f"{committer} merge unaccepted, change the another file.")
 
     return {
         "status_code": 400,
