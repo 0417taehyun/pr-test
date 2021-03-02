@@ -26,7 +26,7 @@ def lambda_handler(event, context):
         "Accept"       : "application/vnd.github.v3+json",
         "Authorization": f"token {token}"
     }
-    base     = "origin"     
+    base     = "master"     
     commits  = data["commits"]
     
     for commit in commits:
