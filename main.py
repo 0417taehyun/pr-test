@@ -30,18 +30,16 @@ def lambda_handler(event, context):
     head     = data["commits"]["id"]
     response = accept_merge(url, headers, base, head)
 
-    modified_file = data["commits"]["modified"][0]
-    if check_pr(modified_file):
-        response  = accept_merge(url, headers, base, head)
-        
-        print(response)
-
-        return {
-            "statusCode": 200,
-            "body"      : json.dumps("Merge accepted")
-        }
+    commits  = data["commits"]
     
-    print("Merge unaccepted, change the another file.")
+    for commit in commits:
+        modified_file = commit["modified"][0]
+        committer     = commit["committer"]["name"]
+        if check_pr(modified_file):
+            response  = accept_merge(url, headers, base, head)
+            print(response)
+        else:
+            print(f"{committer} merge unaccepted, change the another file.")
 
     return {
         "status_code": 400,
