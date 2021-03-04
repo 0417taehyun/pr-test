@@ -21,7 +21,7 @@ def check_file(url, headers):
     response  = requests.get(url = url, headers = headers).json()
     print(response)
 
-    file = response[0]["filname"]
+    file = response[0]["filename"]
     if file != "pr_file.py":
         return False
 
