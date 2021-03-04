@@ -6,9 +6,8 @@ from config import token
 
 def accept_merge(url, headers):
     url      += "/merge"
-    body      = {"commit_title": "Merge Accepted"}
     content   = "Merge 완료!"
-    response  = requests.put(url = url, headers = headers, data = body)
+    response  = requests.put(url = url, headers = headers)
 
     if response.status_code == 409:
         content = "Conflict를 해결해주세요!"
@@ -29,7 +28,7 @@ def check_file(url, headers):
     print(response[0]["patch"])
 
 
-def create_review(url, headers, content):
+def create_comment(url, headers, content):
     url     += "/comments"
     body     = {"body": content}
     response = requests.post(
@@ -38,36 +37,36 @@ def create_review(url, headers, content):
         data    =  json.dumps(body)
     )
 
-    return response.status_code
+    return response.json()
 
 
 def lambda_handler(event, context):
     headers    = {
         "Accept"       : "application/vnd.github.v3+json",
-        "Content-Type" : "application/json; charset=utf-8",
         "Authorization": f"token {token}",
     }
     data = json.loads(event["body"])
 
     commit_count        = data["pull_request"]["commits"]
     changed_files_count = data["pull_request"]["changed_files"]
-    pull_request_url    = data["pull_request"]["_links"]["self"]["href"]
+    issue_url           = data["pull_request"]["issue_url"]
+    pull_request_url    = data["pull_request"]["url"]
 
 
-    if changed_files_count > 2:
+    if changed_files_count > 1:
         content  = "pr_file.py 파일만 수정하실 수 있습니다!"
-        response = create_review(pull_request_url, headers, content)
+        response = create_comment(issue_url, headers, content)
         print(response)
         return False
 
     print(check_file(pull_request_url, headers))
 
-    if commit_count > 2:
+    if commit_count > 1:
         content  = "git rebase를 통해 commit을 정리해주세요 :)"
-        response = create_review(pull_request_url, headers, content)
+        response = create_comment(issue_url, headers, content)
         print(response)
         return False
 
     content  = accept_merge(pull_request_url, headers)
-    response = create_review(pull_request_url, headers, content)
+    response = create_comment(issue_url, headers, content)
     print(response)
