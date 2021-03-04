@@ -18,14 +18,13 @@ def accept_merge(url, headers):
 def check_file(url, headers):
     url      += "/files"
     response  = requests.get(url = url, headers = headers).json()
-    print(response)
 
     file = response[0]["filename"]
-    print(response[0]["patch"])
+
     if file != "pr_file.py":
         return False
 
-    print(response[0]["patch"])
+    return True
 
 
 def create_comment(url, headers, content):
@@ -48,18 +47,15 @@ def lambda_handler(event, context):
     data = json.loads(event["body"])
 
     commit_count        = data["pull_request"]["commits"]
-    changed_files_count = data["pull_request"]["changed_files"]
     issue_url           = data["pull_request"]["issue_url"]
     pull_request_url    = data["pull_request"]["url"]
 
 
-    if changed_files_count > 1:
-        content  = "pr_file.py 파일만 수정하실 수 있습니다!"
+    if not check_file:
+        content  = "pr_file.py 파일만 수정하실 수 있습니다! 다른 파일은 건들이지 말아주세요."
         response = create_comment(issue_url, headers, content)
         print(response)
         return False
-
-    print(check_file(pull_request_url, headers))
 
     if commit_count > 1:
         content  = "git rebase를 통해 commit을 정리해주세요 :)"
