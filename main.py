@@ -52,11 +52,6 @@ def lambda_handler(event, context):
     changed_files_count = data["pull_request"]["changed_files"]
     pull_request_url    = data["pull_request"]["_links"]["self"]["href"]
 
-    if commit_count > 2:
-        content  = "git rebase를 통해 commit을 정리해주세요 :)"
-        response = create_review(pull_request_url, headers, content)
-        print(response)
-        return False
 
     if changed_files_count > 2:
         content  = "pr_file.py 파일만 수정하실 수 있습니다!"
@@ -65,6 +60,12 @@ def lambda_handler(event, context):
         return False
 
     print(check_file(pull_request_url, headers))
+
+    if commit_count > 2:
+        content  = "git rebase를 통해 commit을 정리해주세요 :)"
+        response = create_review(pull_request_url, headers, content)
+        print(response)
+        return False
 
     content  = accept_merge(pull_request_url, headers)
     response = create_review(pull_request_url, headers, content)
