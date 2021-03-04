@@ -22,6 +22,7 @@ def check_file(url, headers):
     print(response)
 
     file = response[0]["filename"]
+    print(response[0]["patch"])
     if file != "pr_file.py":
         return False
 
