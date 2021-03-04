@@ -4,43 +4,68 @@ import requests
 from config import token
 
 
-def check_pr(modified_file):
-    return True if modified_file == "pr_file.py" else False
+def accept_merge(url, headers):
+    url      += "/merge"
+    body      = {"commit_title": "Merge Accepted"}
+    content   = "Merge 완료!"
+    response  = requests.put(url = url, headers = headers, data = body)
+
+    if response.status_code == 409:
+        content = "Conflict를 해결해주세요!"
+
+    return content
 
 
-def accept_merge(url, headers, base, head):
-    body = {"base": base, "head": head}
+def check_file(url, headers):
+    url      += "/files"
+    response  = requests.get(url = url, headers = headers).json()
+    print(response)
+
+    file = response[0]["filname"]
+    if file != "pr_file.py":
+        return False
+
+    print(response[0]["patch"])
+
+
+def create_review(url, headers, content):
+    url     += "/reviews"
+    body     = {"body": content}
     response = requests.post(
         url     = url,
         headers = headers,
-        data    = json.dumps(body)
-    ).json()
+        data    =  json.dumps(body)
+    )
 
-    return response
+    return response.status_code
 
 
 def lambda_handler(event, context):
-    data     = json.loads(event["body"])
-    print(data)
-    url      = data["repository"]["merges_url"]
-    headers  = {
+    headers    = {
         "Accept"       : "application/vnd.github.v3+json",
-        "Authorization": f"token {token}"
+        "Content-Type" : "application/json; charset=utf-8",
+        "Authorization": f"token {token}",
     }
-    base     = "master"     
-    commits  = data["commits"]
-    
-    for commit in commits:
-        modified_file = commit["modified"][0]
-        head          = commit["id"]
-        committer     = commit["committer"]["name"]
-        if check_pr(modified_file):
-            response  = accept_merge(url, headers, base, head)
-            print(response)
-        else:
-            print(f"{committer} merge unaccepted, change the another file.")
+    data = json.loads(event["body"])
 
-    return {
-        "status_code": 400,
-        "body"       : json.dumps("You can only change the pr_file.py")
-    }
+    commit_count        = data["pull_request"]["commits"]
+    changed_files_count = data["pull_request"]["changed_files"]
+    pull_request_url    = data["pull_request"]["_links"]["self"]["href"]
+
+    if commit_count > 2:
+        content  = "git rebase를 통해 commit을 정리해주세요 :)"
+        response = create_review(pull_request_url, headers, content)
+        print(response)
+        return False
+
+    if changed_files_count > 2:
+        content  = "pr_file.py 파일만 수정하실 수 있습니다!"
+        response = create_review(pull_request_url, headers, content)
+        print(response)
+        return False
+
+    print(check_file(pull_request_url, headers))
+
+    content  = accept_merge(pull_request_url, headers)
+    response = create_review(pull_request_url, headers, content)
+    print(response)
