@@ -29,7 +29,7 @@ def check_file(url, headers):
 
 
 def create_review(url, headers, content):
-    url     += "/reviews"
+    url     += "/comments"
     body     = {"body": content}
     response = requests.post(
         url     = url,
